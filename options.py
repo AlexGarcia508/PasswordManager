@@ -1,11 +1,21 @@
 from cryptography.fernet import Fernet
-def menu():
+def main():
     password = {
         "discord": "blue",
         "google": "red"
     }
 
     pm = PasswordManager()
+
+    print("""Welcome to Password Manager.
+    1. Create new key
+    2. Load key
+    3. Create new password file
+    4. Load password file
+    5. Add new password
+    6. Get password
+    7. Exit
+    """)
 
     done = False
 
@@ -83,6 +93,9 @@ class PasswordManager:
 
     def change_password(self):
         pass
+
+if __name__ == "__main__":
+    main()
 
 '''
 def menu():
