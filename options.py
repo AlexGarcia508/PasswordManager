@@ -1,81 +1,75 @@
 from cryptography.fernet import Fernet
-def main():
-    password = {
-        "discord": "blue",
-        "google": "red"
-    }
-
+from pathlib import Path
+def main()
     pm = PasswordManager()
 
-    print("""Welcome to Password Manager.
-    1. Create new key
-    2. Load key
-    3. Create new password file
-    4. Load password file
-    5. Add new password
-    6. Get password
-    7. Exit
+    print("""
+Welcome to Password Manager.
+1. Get a password.
+2. Add a new password.
+3. Change a password.
+4. Exit
     """)
 
-    done = False
+    running = True
 
-    while not done:
+    while running:
         choice = input("Enter choice: ")
+
         if choice == "1":
-            path = input("Enter path: ")
-            pm.create_key(path)
+            site = input("What site do you want?: ")
+            print(f"Password for {site} is {pm.get_password(site)}")
         elif choice == "2":
-            path = input("Enter path: ")
-            pm.load_key(path)
-        elif choice == "3":
-            path = input("Enter path: ")
-            pm.create_password_file(path, password)
-        elif choice == "4":
-            path = input("Enter path: ")
-            pm.load_password_file(path)
-        elif choice == "5":
             site = input("Enter site: ")
             password = input("Enter password: ")
             pm.add_password(site, password)
-        elif choice == "6":
-            site = input("What site do you want?: ")
-            print(f"Password for {site} is {pm.get_password(site)}")
-        elif choice == "7":
-            done = True
-            print("Bye")
+        elif choice == "3":
+            pass
+        elif choice == "4":
+            running = False
+            print("Closing...")
         else:
             print("Invalid choice.")
 
 class PasswordManager:
     def __init__(self):
-        self.key = None
-        self.password_file = None
+        password = {"discord", "something"}
         self.password_dict = {}
+        self.key_file = "masterkey.txt"
+        self.key = self.load_or_create_key_file(self.key_file)
+        self.password_file = "passwordlog.txt"
+        self.load_or_create_password_file(self.password_file, password)
 
-    def create_key(self, path):
-        self.key = Fernet.generate_key()
-        print(self.key)
-        with open(path, 'wb') as f:
-            f.write(self.key)
+    def load_or_create_key_file(self, key_file):
+        key_path = Path(key_file) # Convert string to Path object
 
-    def load_key(self, path):
-        with open(path, 'rb') as f:
-            self.key = f.read()
+        # If the key file exists, read the key from the file
+        if key_path.is_file():
+            with key_path.open('rb') as f:
+                key = f.read()
+        else:
+            # If the key file does not exist, create a new key and save it to the file
+            key = Fernet.generate_key()
+            with key_path.open('wb') as f:
+                f.write(key)
 
-    def create_password_file(self, path, initial_values=None):
-        self.password_file = path
+        return key
 
-        if initial_values is not None:
-            for key, value in initial_values.items():
-                self.add_password(key, value)
+    def load_or_create_password_file(self, password_file, initial_values):
+        password_path = Path(password_file)  # Convert string to Path object
 
-    def load_password_file(self, path):
-        self.password_file = path
-
-        with open(path, 'r') as f:
-            for line in f:
-                site, encrypted = line.split(":")
-                self.password_dict[site] = Fernet(self.key).decrypt(encrypted.encode()).decode()
+        # If the password file exists then load it
+        if password_path.is_file():
+            with password_path.open('r') as f:
+                for line in f:
+                    site, encrypted = line.split(":")
+                    self.password_dict[site] = Fernet(self.key).decrypt(encrypted.encode()).decode()
+                    print(self.password_dict)
+        else:
+            # If the password file does not exist, create new password file
+            if initial_values is not None:
+                for key, value in initial_values.items():
+                    self.add_password(key, value)
 
     def add_password(self, site, password):
         self.password_dict[site] = password
@@ -86,6 +80,7 @@ class PasswordManager:
                 f.write(site + ":" + encrypted.decode() + "\n")
 
     def get_password(self, site):
+        print(self.password_dict)
         return self.password_dict[site]
 
     def delete_password(self):
