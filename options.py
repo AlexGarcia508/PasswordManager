@@ -1,14 +1,15 @@
 from cryptography.fernet import Fernet
 from pathlib import Path
-def main()
+def main():
     pm = PasswordManager()
 
     print("""
 Welcome to Password Manager.
-1. Get a password.
+1. Access a password.
 2. Add a new password.
 3. Change a password.
-4. Exit
+4. Delete a password.
+0. Exit
     """)
 
     running = True
@@ -17,15 +18,20 @@ Welcome to Password Manager.
         choice = input("Enter choice: ")
 
         if choice == "1":
-            site = input("What site do you want?: ")
+            site = input("What site's password do you want?: ")
             print(f"Password for {site} is {pm.get_password(site)}")
         elif choice == "2":
-            site = input("Enter site: ")
+            site = input("Enter new site: ")
             password = input("Enter password: ")
             pm.add_password(site, password)
         elif choice == "3":
-            pass
+            site = input("Enter site's password to change: ")
+            password = input("Enter new password: ")
+            pm.change_password(site, password)
         elif choice == "4":
+            site = input("Enter site's password to delete: ")
+            pm.delete_password(site)
+        elif choice == "0":
             running = False
             print("Closing...")
         else:
@@ -71,6 +77,10 @@ class PasswordManager:
                 for key, value in initial_values.items():
                     self.add_password(key, value)
 
+    def get_password(self, site):
+        print(self.password_dict)
+        return self.password_dict[site]
+
     def add_password(self, site, password):
         self.password_dict[site] = password
 
@@ -79,15 +89,25 @@ class PasswordManager:
                 encrypted = Fernet(self.key).encrypt(password.encode())
                 f.write(site + ":" + encrypted.decode() + "\n")
 
-    def get_password(self, site):
-        print(self.password_dict)
-        return self.password_dict[site]
+    def change_password(self, site, new_password):
+        self.password_dict[site] = new_password
 
-    def delete_password(self):
-        pass
+        # rewrite all passwords with new encryptions including new password to file
+        with open(self.password_file, 'w') as f:
+            for site, password in self.password_dict.items():
+                encrypted = Fernet(self.key).encrypt(password.encode())
+                f.write(site + ":" + encrypted.decode() + "\n")
 
-    def change_password(self):
-        pass
+    def delete_password(self, site):
+        if site in self.password_dict:
+            del self.password_dict[site]
+            self.save_password_file()
+
+    def save_password_file(self):
+        with open(self.password_file, 'w') as f:
+            for site, password in self.password_dict.items():
+                encrypted = Fernet(self.key).encrypt(password.encode())
+                f.write(site + ":" + encrypted.decode() + "\n")
 
 if __name__ == "__main__":
     main()
