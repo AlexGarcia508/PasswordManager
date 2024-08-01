@@ -2,21 +2,20 @@ from options import *
 
 def menu():
     print("""
-    Welcome to Password Manager.
-    1. Access a password.
-    2. Add a new password.
-    3. Change a password.
-    4. Delete a password.
-    0. Exit
+Welcome to Password Manager.
+1. Access a password.
+2. Add a new password.
+3. Change a password.
+4. Delete a password.
+0. Exit
         """)
 def main():
     pm = PasswordManager()
 
-    menu()
-
     running = True
 
     while running:
+        menu()
         choice = input("Enter choice: ")
 
         if choice == "1":

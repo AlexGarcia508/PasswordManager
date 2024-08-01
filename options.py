@@ -1,12 +1,25 @@
-from cryptography.fernet import Fernet
 from pathlib import Path
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+import base64
+import secrets
 
 class PasswordManager:
-    def __init__(self):
+    def __init__(self, master_password):
         password = {"discord", "something"}
         self.password_dict = {}
+
+        self.salt_file = "salt.txt"
+        self.salt = self.handle_salt(self.salt_file)
+
         self.key_file = "masterkey.txt"
         self.key = self.load_or_create_key_file(self.key_file)
+
+        self.key = self.derive_key(master_password, self.salt)
+
         self.password_file = "passwordlog.txt"
         self.load_or_create_password_file(self.password_file, password)
 
