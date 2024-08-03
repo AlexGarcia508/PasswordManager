@@ -10,7 +10,9 @@ Welcome to Password Manager.
 0. Exit
         """)
 def main():
-    pm = PasswordManager()
+    #username = input("Username: ")
+    master_password = input("Password: ")
+    pm = PasswordManager(master_password)
 
     running = True
 

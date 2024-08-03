@@ -9,36 +9,44 @@ import secrets
 
 class PasswordManager:
     def __init__(self, master_password):
-        password = {"discord", "something"}
+        password = {"discord": "purple", "google": "blue"}
         self.password_dict = {}
-
         self.salt_file = "salt.txt"
-        self.salt = self.handle_salt(self.salt_file)
+        self.password_file = "passwordlog.txt"
 
-        self.key_file = "masterkey.txt"
-        self.key = self.load_or_create_key_file(self.key_file)
+        self.salt = self.handle_salt(self.salt_file)
 
         self.key = self.derive_key(master_password, self.salt)
 
-        self.password_file = "passwordlog.txt"
-        self.load_or_create_password_file(self.password_file, password)
+        self.handle_password_file(self.password_file, password)
 
-    def load_or_create_key_file(self, key_file):
-        key_path = Path(key_file) # Convert string to Path object
+    def handle_salt(self, salt_file):
+        salt_path = Path(salt_file)
 
-        # If the key file exists, read the key from the file
-        if key_path.is_file():
-            with key_path.open('rb') as f:
-                key = f.read()
+        # If the salt file exists then load salt from it
+        if salt_path.is_file():
+            with salt_path.open('rb') as f:
+                salt = f.read()
         else:
-            # If the key file does not exist, create a new key and save it to the file
-            key = Fernet.generate_key()
-            with key_path.open('wb') as f:
-                f.write(key)
+            # If the salt file does not exist, create new salt and save to file
+            salt = secrets.token_bytes(16)
+            with salt_path.open('wb') as f:
+                f.write(salt)
+        return salt
 
+    def derive_key(self, password, salt):
+        # Derive key from password and salt using PBKDF2
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         return key
 
-    def load_or_create_password_file(self, password_file, initial_values):
+    def handle_password_file(self, password_file, initial_values):
         password_path = Path(password_file)  # Convert string to Path object
 
         # If the password file exists then load it
