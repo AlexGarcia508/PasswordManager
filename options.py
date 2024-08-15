@@ -1,24 +1,47 @@
+import hashlib
 from pathlib import Path
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.fernet import Fernet, InvalidToken
+from argon2.low_level import hash_secret_raw, Type
 import base64
 import secrets
 
 class PasswordManager:
-    def __init__(self, master_password):
+    def __init__(self):
         password = {"discord": "purple", "google": "blue"}
         self.password_dict = {}
-        self.salt_file = "salt.txt"
+        self.username_file = "username.txt"
         self.password_file = "passwordlog.txt"
+        self.salt_file = "salt.txt"
 
         self.salt = self.handle_salt(self.salt_file)
+        # Handle username storage and verification
+        if self.handle_username():
+            pass
+        if self.authenticate_user(password):
+            pass
+    def handle_username(self):
+        username_path = Path(self.username_file)
 
-        self.key = self.derive_key(master_password, self.salt)
+        while True:
+            # Hash the username
+            username = input("Username: ")
+            username_hash = hashlib.sha256(username.encode()).hexdigest()
 
-        self.handle_password_file(self.password_file, password)
+            # If the username file exists then load username from it
+            if username_path.is_file():
+                with username_path.open('r') as f:
+                    stored_username_hash = f.read().strip()
+
+                # Verify the hashed username
+                if stored_username_hash != username_hash:
+                    print("Username does not match. Try again.")
+                else:
+                    return True
+            else:
+                # If the username file does not exist, accept username and save to file
+                with username_path.open('w') as f:
+                    f.write(username_hash)
+                    return True
 
     def handle_salt(self, salt_file):
         salt_path = Path(salt_file)
@@ -34,16 +57,29 @@ class PasswordManager:
                 f.write(salt)
         return salt
 
+    def authenticate_user(self, password):
+        while True:
+            master_password = input("Password: ")
+            self.key = self.derive_key(master_password, self.salt)
+            try:
+                self.handle_password_file(self.password_file, password)
+                print("Login successful!")
+                return  # Exit the loop on successful login
+            except InvalidToken:
+                print("Incorrect password. Please try again.")
+
     def derive_key(self, password, salt):
-        # Derive key from password and salt using PBKDF2
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
+        # Derive a key using Argon2 with customizable parameters
+        hashed = hash_secret_raw(
+            password.encode(),  # The password to hash
+            salt,  # The salt to use
+            time_cost=2,  # The time cost parameter (default 2)
+            memory_cost=65536,  # The memory cost parameter (default 65536 bytes)
+            parallelism=2,  # The parallelism parameter (default 2)
+            hash_len=32,  # The length of the derived key (default 32 bytes)
+            type=Type.ID  # The Argon2 type (ID variant)
         )
-        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        key = base64.urlsafe_b64encode(hashed)  # Encode the key in a URL-safe base64 format
         return key
 
     def handle_password_file(self, password_file, initial_values):

@@ -9,10 +9,9 @@ Welcome to Password Manager.
 4. Delete a password.
 0. Exit
         """)
+
 def main():
-    #username = input("Username: ")
-    master_password = input("Password: ")
-    pm = PasswordManager(master_password)
+    pm = PasswordManager()
 
     running = True
 
