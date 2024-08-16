@@ -106,23 +106,33 @@ class PasswordManager:
         self.password_dict[site] = password
 
         if self.password_file is not None:
-            with open(self.password_file, 'a') as f:
-                encrypted = Fernet(self.key).encrypt(password.encode())
-                f.write(site + ":" + encrypted.decode() + "\n")
+            self.save_password_file()
 
     def change_password(self, site, new_password):
+        # new password added to dictionary
         self.password_dict[site] = new_password
 
         # rewrite all passwords with new encryptions including new password to file
-        with open(self.password_file, 'w') as f:
-            for site, password in self.password_dict.items():
-                encrypted = Fernet(self.key).encrypt(password.encode())
-                f.write(site + ":" + encrypted.decode() + "\n")
+        self.save_password_file()
 
     def delete_password(self, site):
         if site in self.password_dict:
             del self.password_dict[site]
             self.save_password_file()
+
+    def validate_site(self):
+        site = None
+        invalid = True
+
+        while invalid:
+            site = input("Enter site: ")
+            # Check for ":" in the site
+            if ":" in site:
+                print("Site cannot contain the ':' character. Please try again.")
+            else:
+                invalid = False
+
+        return site
 
     def save_password_file(self):
         with open(self.password_file, 'w') as f:
