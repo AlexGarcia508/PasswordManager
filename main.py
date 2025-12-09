@@ -11,7 +11,9 @@ Welcome to Password Manager.
         """)
 
 def main():
+    print("step1")
     pm = PasswordManager()
+    print("stepish")
 
     running = True
 
