@@ -9,52 +9,46 @@ class PasswordManager:
     def __init__(self):
         password = {"discord": "purple", "google": "blue"}
         self.password_dict = {}
-        self.username_file = "username.txt"
-        self.password_file = "passwordlog.txt"
-        self.salt_file = "salt.txt"
+        self.username_file = Path("username.txt")
+        self.password_file = Path("passwordlog.txt")
+        self.salt_file = Path("salt.txt")
 
-        self.salt = self.handle_salt(self.salt_file)
+        self.salt = self.handle_salt()
         # Handle username storage and verification
         if self.handle_username():
             pass
         if self.authenticate_user(password):
             pass
     def handle_username(self):
-        username_path = Path(self.username_file)
-
         while True:
             # Hash the username
             username = input("Username: ")
             username_hash = hashlib.sha256(username.encode()).hexdigest()
 
             # If the username file exists then load username from it
-            if username_path.is_file():
-                with username_path.open('r') as f:
-                    stored_username_hash = f.read().strip()
+            print(self.username_file.is_file())
+            if self.username_file.is_file():
+                stored_username_hash = self.username_file.read_text().strip()
 
                 # Verify the hashed username
-                if stored_username_hash != username_hash:
-                    print("Username does not match. Try again.")
-                else:
+                if stored_username_hash == username_hash:
                     return True
+                else:
+                    print("Username does not match. Try again.")
             else:
                 # If the username file does not exist, accept username and save to file
-                with username_path.open('w') as f:
-                    f.write(username_hash)
-                    return True
+                self.username_file.write_text(username_hash)
+                print("Username saved.")
+                return True
 
-    def handle_salt(self, salt_file):
-        salt_path = Path(salt_file)
-
+    def handle_salt(self):
         # If the salt file exists then load salt from it
-        if salt_path.is_file():
-            with salt_path.open('rb') as f:
-                salt = f.read()
+        if self.salt_file.is_file():
+            salt = self.salt_file.read_bytes()
         else:
             # If the salt file does not exist, create new salt and save to file
             salt = secrets.token_bytes(16)
-            with salt_path.open('wb') as f:
-                f.write(salt)
+            self.salt_file.write_bytes(salt)
         return salt
 
     def authenticate_user(self, password):
